@@ -88,7 +88,7 @@ namespace SneakawayStudio
         }
 
         [Tooltip("All currently loaded scenes")]
-        [SerializeField] string[] loadedSceneNames;
+        [SerializeField] List<string> loadedSceneNames;
 
         [Tooltip("All build scene names")]
         [SerializeField] List<string> buildSceneNames;

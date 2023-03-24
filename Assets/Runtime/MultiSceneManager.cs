@@ -34,22 +34,24 @@ namespace SneakawayStudio
         ////////////////////////////////////////////////////// 
         /////////////////// STATIC MEMBERS ///////////////////
         // - Available everywhere w/o instance reference - //
-        ////////////////////////////////////////////////////// 
+        //////////////////////////////////////////////////////
+
+        // ⚠️ EDIT THESE ITEMS TO MATCH YOUR PROJECT ⚠️ //
+
+        // prefix and suffix to remove from paths
+        public static string scenePathPrefix = "Assets/Scenes/";
+        public static string scenePathSuffix = ".unity";
 
         // MANAGER SCENE
         public static bool managerSceneLoaded = false;
-        //public static string managerSceneName;
-        public static string managerSceneName = "ManagerScene";
-        public static string managerScenePath;
-
-        // OLDER
         // name and path of manager scene
-        //public static string managerScenePath = "Scripts/SceneManagers/Demo/" + managerSceneName;
+        public static string managerSceneName = "ManagerScene";
+        public static string managerScenePath = scenePathPrefix + managerSceneName;
         // default active scene to load
-        public static string defaultActiveSceneName = "Scene1";
-        // prefix and suffix to remove from paths
-        public static string scenePathPrefix = "Assets/Samples/Scenes/";
-        public static string scenePathSuffix = ".unity";
+        public static string defaultActiveSceneName = "Scene-0-0";
+
+
+
 
 
 
@@ -69,7 +71,7 @@ namespace SneakawayStudio
 
         // SCENES LOADED
         //public static int loadedScenesCount; // scenes currently loaded
-        public static string[] loadedSceneNames;
+        public static List<string> loadedSceneNames;
 
         // SCENES IN BUILD
         //public static int buildScenesCount; // scenes currently loaded
@@ -80,8 +82,6 @@ namespace SneakawayStudio
 
         private void OnValidate()
         {
-            //managerSceneName = gameObject.scene.name;
-            //managerScenePath = gameObject.scene.path;
             UpdateScenesInBuild();
             activeSceneName = GetActiveSceneName();
             if (multiSceneManagerDebug == null) multiSceneManagerDebug = GetComponent<MultiSceneManagerDebug>();
@@ -210,12 +210,12 @@ namespace SneakawayStudio
                 await LoadSceneAsync(defaultActiveSceneName, true, true);
 
             Debug.Log($"{cName}.CheckForLoadActiveScene() [2] {GetActiveSceneName()} ?? {managerSceneName}".Yellow3());
-            if (GetActiveSceneName() == managerSceneName)
-            {
-                await SetSceneActive(defaultActiveSceneName);
-            }
 
+            AlwaysSetNonManagerActive();
         }
+
+
+
 
         /// <summary>
         /// Load manager scene
@@ -249,6 +249,12 @@ namespace SneakawayStudio
             }
             return managerSceneLoaded;
         }
+
+        public static void LoadScene(string _name)
+        {
+            LoadSceneAsync(_name, true, true);
+        }
+
 
         /// <summary>
         /// Load a scene by name (use for gameManagers or any multi scene)
@@ -447,6 +453,8 @@ namespace SneakawayStudio
         /// <summary>Find the current, next, and previous index of the current active scene</summary>
         public static void UpdateSceneIndexesFromBuild()
         {
+            AlwaysSetNonManagerActive();
+
             //if (buildSceneNames == null || buildSceneNames.Count < 1) return;
 
             Debug.Log($"{cName}.UpdateSceneIndexesFromBuild() [0] => activeSceneName = {activeSceneName}; activeSceneIndex = {activeSceneIndex}; buildSceneNames.Count = {buildSceneNames.Count}".Peach1());
@@ -467,6 +475,21 @@ namespace SneakawayStudio
         ////////////////////////////////////////////////////// 
         ////////////////// SET SCENE DATA ////////////////////
         //////////////////////////////////////////////////////
+
+        /// <summary>
+        /// The Manager scene should never be active
+        /// </summary>
+        static async void AlwaysSetNonManagerActive()
+        {
+            if (GetActiveSceneName() == managerSceneName)
+            {
+                int mgrIndex = loadedSceneNames.IndexOf(managerSceneName);
+                if (mgrIndex == 0)
+                    await SetSceneActive(loadedSceneNames[1]);
+                else
+                    await SetSceneActive(loadedSceneNames[0]);
+            }
+        }
 
         /// <summary>Set a scene active via its reference (Scene)</summary>
         public bool SetActiveScene(Scene _scene)
@@ -529,7 +552,7 @@ namespace SneakawayStudio
             Debug.Log($"{cName}.{mName}() [1] GetActiveSceneName()={GetActiveSceneName()}".Peach1());
 
             // reset
-            loadedSceneNames = new string[SceneManager.sceneCount];
+            loadedSceneNames = new List<string>();
             // get array 
             Scene[] _loadedScenes = GetLoadedScenes();
 
@@ -537,7 +560,7 @@ namespace SneakawayStudio
                                                 // loop through loaded scenes
             for (int i = 0; i < _loadedScenes.Length; i++)
             {
-                loadedSceneNames[i] = _loadedScenes[i].name;
+                loadedSceneNames.Add(_loadedScenes[i].name);
                 str += $"{i}. {_loadedScenes[i].name} ";  // TEST
             }
             Debug.Log($"{cName}.{mName}() {str} // GetActiveSceneName()={GetActiveSceneName()}".Peach2());  // TEST
